@@ -9,12 +9,14 @@
 #include <iostream>
 #include <string>
 #include <unistd.h>
+#include <algorithm>
 
 
 using std::vector;
 using std::cout;
 using std::endl;
 using std::string;
+using std::to_string;
 
 class dir_object{
     std::filesystem::directory_entry current_entry;
@@ -36,20 +38,22 @@ public:
 
 class dir_structure{
     dir_object dir_tree;
+    int baseDepth;
 
-    void showTree(int depth);//if -1 then recursion is infinite
+    
 
-    void showTree(dir_object& de, int depth);//if -1 then recursion is infinite
+    void showTree(dir_object& de, int depth, bool p, bool f, bool s);//if -1 then recursion is infinite
 
     void traverseTree(dir_object& de, int depth);
 
     void traverseTree(int depth);
 
 public:
-
+    void showTree(int depth, bool p, bool f, bool s);//if -1 then recursion is infinite
+    const dir_object& getTreeStem();
     void initDirStructure();
     void initDirStructure(int d);
-    
+    int getBaseDepth();
 
     dir_structure(const dir_object& t);
     dir_structure(string t);

@@ -68,21 +68,6 @@ dir_object::dir_object(){
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 /*
 
     dir_structure
@@ -94,12 +79,8 @@ void dir_structure::traverseTree(int depth){
     traverseTree(dir_tree, depth);
 }
 
-
-
-
-
-
 void dir_structure::traverseTree(dir_object& de, int depth){
+    if(depth<0)baseDepth=-depth-2;
     for(const auto& i:std::filesystem::directory_iterator(de.getCurrentEntry())){
         de.getSubEntries().push_back(i);
         //cout<<i.path()<<endl;
@@ -112,38 +93,96 @@ void dir_structure::traverseTree(dir_object& de, int depth){
     }
 }
 
-void dir_structure::showTree(int depth){
-    cout<<dir_tree.getName()<<endl;
-    if(depth==0)return;
-    for(auto& i:dir_tree.getSubEntries()){
-        //cout<<i.getName()<<endl;
-        if(i.getCurrentEntry().is_directory())showTree(i, depth-1);
+void dir_structure::showTree(int depth, bool p, bool f, bool s){
+    string foo=dir_tree.getName();
+    string size="";
+    if(s && !dir_tree.getCurrentEntry().is_directory()){
+        size+="[size: ";
+        size+=to_string(dir_tree.getCurrentEntry().file_size());
+        size+=" bytes]\n";
     }
+    if(!dir_tree.getCurrentEntry().is_directory() && !p){
+        foo.erase(0,foo.find_last_of('/')+1);
+        //foo.insert(0, string(4-depth, '\t'));
+    }
+
+    cout<<foo<<size<<endl;
+    
+    if(depth==0)return;
+    if(dir_tree.getCurrentEntry().is_directory()){
+        for(auto& i:dir_tree.getSubEntries()){
+            //cout<<i.getName()<<endl;
+            showTree(i, depth-1, p, f, s);
+        }
+    }
+    
 }
 
 
-void dir_structure::showTree(dir_object& de, int depth){
-    cout<<de.getName()<<endl;
-    if(depth==0)return;
-    for(auto& i:de.getSubEntries()){
-        if(i.getCurrentEntry().is_directory())showTree(i, depth-1);
+void dir_structure::showTree(dir_object& de, int depth, bool p, bool f, bool s){
+    string foo=de.getName();
+    string size="";
+    if(s && !de.getCurrentEntry().is_directory()){
+        size+="[size: ";
+        size+=to_string(de.getCurrentEntry().file_size());
+        size+=" bytes]\n";
     }
+    if(!de.getCurrentEntry().is_directory() && !p){
+        foo.erase(0,foo.find_last_of('/')+1);
+        //foo.insert(0, string(4-depth, '\t'));
+    }
+
+    foo.insert(0,"├");
+    
+    if(s && !de.getCurrentEntry().is_directory()){
+        size.insert(0,"│");
+        for(int i=0;i<baseDepth-depth;i++){
+            if(i+1!=baseDepth-depth)size.insert(0," ");
+            if(i+1!=baseDepth-depth)size.insert(0,"│");
+        }
+
+    }
+
+    for(int i=0;i<baseDepth-depth;i++){
+        if(i+1!=baseDepth-depth)foo.insert(0," ");
+        if(i+1!=baseDepth-depth)foo.insert(0,"│");
+    }
+
+    foo.append("\n");
+
+    if((f && de.getCurrentEntry().is_directory()) ||
+        !f)cout<<foo<<size;
+    
+    if(depth==0)return;
+    if(de.getCurrentEntry().is_directory()){
+        for(auto& i:de.getSubEntries()){
+            showTree(i, depth-1, p, f, s);
+        }
+    }
+    
 }
 
 
 void dir_structure::initDirStructure(){
+    baseDepth=-1;
     traverseTree(-1);
-    showTree(-1);
+    //showTree(-1);
 }
 
 void dir_structure::initDirStructure(int d){
+    baseDepth=d;
     traverseTree(d);
-    showTree(d);
+    //showTree(d);
 }
 
 
+const dir_object& dir_structure::getTreeStem(){
+    return dir_tree;
+}
 
-
+int dir_structure::getBaseDepth(){
+    return baseDepth;
+}
 
 
 dir_structure::dir_structure(const dir_object& t){
