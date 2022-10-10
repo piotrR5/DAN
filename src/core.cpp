@@ -13,15 +13,6 @@ std::filesystem::directory_entry& dir_object::getCurrentEntry(){
     return current_entry;
 }
 
-
-
-
-
-
-
-
-
-
 ////////////////////////getName of dir entry
 
 string dir_object::getName(){
@@ -37,12 +28,6 @@ string getNameOf(dir_object& d){
 string getNameOf(const std::filesystem::directory_entry& d){
     return d.path();
 }
-
-
-
-
-
-
 
 
 /////////////////dir_entry constructors
@@ -64,16 +49,26 @@ dir_object::dir_object(){
     current_entry=std::filesystem::directory_entry(std::filesystem::current_path());
 }
 
-
-
-
-
 /*
 
     dir_structure
 
 
 */
+uint64_t size_of_dir(dir_object& d){
+    uint64_t size=0;
+    for(auto& i:d.getSubEntries()){
+        if(i.getCurrentEntry().is_directory()){
+            size+=size_of_dir(i);
+        }
+        else{
+            size+=i.getCurrentEntry().file_size();
+        }
+    }
+    return size;
+}
+
+
 
 void dir_structure::traverseTree(int depth){
     traverseTree(dir_tree, depth);
@@ -85,6 +80,8 @@ void dir_structure::traverseTree(dir_object& de, int depth){
         de.getSubEntries().push_back(i);
         //cout<<i.path()<<endl;
     }
+
+
     if(depth==1)return;
     for(auto& i:de.getSubEntries()){
         if(i.getCurrentEntry().is_directory()){
@@ -94,72 +91,90 @@ void dir_structure::traverseTree(dir_object& de, int depth){
 }
 
 void dir_structure::showTree(int depth, bool p, bool f, bool s){
+
+    cout<<"\n\t[Directory Analyzer]\n";
+    cout<<"\n\n";
+
     string foo=dir_tree.getName();
     string size="";
-    if(s && !dir_tree.getCurrentEntry().is_directory()){
-        size+="[size: ";
-        size+=to_string(dir_tree.getCurrentEntry().file_size());
-        size+=" bytes]\n";
-    }
-    if(!dir_tree.getCurrentEntry().is_directory() && !p){
-        foo.erase(0,foo.find_last_of('/')+1);
-        //foo.insert(0, string(4-depth, '\t'));
-    }
 
-    cout<<foo<<size<<endl;
+    size+="[size: ";
+    size+=to_string(size_of_dir(dir_tree));
+    size+=" bytes]\n";
+
+
+
+    cout<<foo<<"\n";
+    if(s)cout<<size;
     
     if(depth==0)return;
-    if(dir_tree.getCurrentEntry().is_directory()){
-        for(auto& i:dir_tree.getSubEntries()){
-            //cout<<i.getName()<<endl;
-            showTree(i, depth-1, p, f, s);
-        }
+    for(auto& i:dir_tree.getSubEntries()){
+        showTree(
+            i, 
+            (depth==-1 ? depth : depth-1), 
+            p, 
+            f, 
+            s, 
+            i.getName()==dir_tree.getSubEntries().back().getName()
+        );
     }
-    
 }
 
 
-void dir_structure::showTree(dir_object& de, int depth, bool p, bool f, bool s){
+void dir_structure::showTree(dir_object& de, int depth, bool p, bool f, bool s, bool isLast){
     string foo=de.getName();
-    string size="";
-    if(s && !de.getCurrentEntry().is_directory()){
-        size+="[size: ";
-        size+=to_string(de.getCurrentEntry().file_size());
-        size+=" bytes]\n";
-    }
-    if(!de.getCurrentEntry().is_directory() && !p){
-        foo.erase(0,foo.find_last_of('/')+1);
-        //foo.insert(0, string(4-depth, '\t'));
-    }
+    string size="[size: ";
 
-    foo.insert(0,"├");
+    int help=baseDepth-depth+1;
     
     if(s && !de.getCurrentEntry().is_directory()){
-        size.insert(0,"│");
-        for(int i=0;i<baseDepth-depth;i++){
-            if(i+1!=baseDepth-depth)size.insert(0," ");
-            if(i+1!=baseDepth-depth)size.insert(0,"│");
-        }
+        size+=to_string(de.getCurrentEntry().file_size());
 
+        size.insert(0,"│ ");
+        for(int i=0;i<help;i++){
+            if(i+1!=help)size.insert(0," ");
+            if(i+1!=help)size.insert(0,"│ ");
+        }
+    }
+    else if(s && de.getCurrentEntry().is_directory()){
+        size+=to_string(size_of_dir(de));
+
+        size.insert(0,"│ ");
+        for(int i=0;i<help;i++){
+            if(i+1!=help)size.insert(0," ");
+            if(i+1!=help)size.insert(0,"│ ");
+        }
+    }
+    
+
+    size+=" bytes]\n";
+
+
+
+    if(!de.getCurrentEntry().is_directory() && !p){
+        foo.erase(0,foo.find_last_of('/')+1);
     }
 
-    for(int i=0;i<baseDepth-depth;i++){
-        if(i+1!=baseDepth-depth)foo.insert(0," ");
-        if(i+1!=baseDepth-depth)foo.insert(0,"│");
+    for(int i=0;i<help;i++){
+        if(i+1!=help)foo.insert(0," ");
+        if(i+1!=help)foo.insert(0,"│ ");
     }
 
     foo.append("\n");
 
     if((f && de.getCurrentEntry().is_directory()) ||
-        !f)cout<<foo<<size;
+        !f)cout<<foo;
+        if(s)cout<<size;
     
     if(depth==0)return;
+
+
+
     if(de.getCurrentEntry().is_directory()){
         for(auto& i:de.getSubEntries()){
-            showTree(i, depth-1, p, f, s);
+            showTree(i, depth-1, p, f, s, i.getName()==de.getSubEntries().back().getName());
         }
     }
-    
 }
 
 

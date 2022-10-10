@@ -42,7 +42,7 @@ class dir_structure{
 
     
 
-    void showTree(dir_object& de, int depth, bool p, bool f, bool s);//if -1 then recursion is infinite
+    void showTree(dir_object& de, int depth, bool p, bool f, bool s, bool isLast);//if -1 then recursion is infinite
 
     void traverseTree(dir_object& de, int depth);
 
